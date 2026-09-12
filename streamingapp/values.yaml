@@ -1,0 +1,56 @@
+namespace: streamingapp
+
+imagePullPolicy: Always
+
+services:
+  auth:
+    image: 038501649978.dkr.ecr.ap-south-1.amazonaws.com/streaming-auth
+    tag: "latest"
+    replicas: 2
+    port: 3001
+
+  streaming:
+    image: 038501649978.dkr.ecr.ap-south-1.amazonaws.com/streaming-service
+    tag: "latest"
+    replicas: 2
+    port: 3002
+
+  admin:
+    image: 038501649978.dkr.ecr.ap-south-1.amazonaws.com/streaming-admin
+    tag: "latest"
+    replicas: 2
+    port: 3003
+
+  chat:
+    image: 038501649978.dkr.ecr.ap-south-1.amazonaws.com/streaming-chat
+    tag: "latest"
+    replicas: 2
+    port: 3004
+
+  frontend:
+    image: 038501649978.dkr.ecr.ap-south-1.amazonaws.com/streaming-frontend
+    tag: "latest"
+    replicas: 2
+    port: 80
+
+mongo:
+  image: mongo:6
+  port: 27017
+  storageSize: 5Gi
+
+config:
+  mongoDatabase: streamingapp
+  awsRegion: ap-south-1
+  clientUrls: "http://streamingapp.local"
+
+secrets:
+  jwtSecret: changeme
+  awsAccessKeyId: ""
+  awsSecretAccessKey: ""
+  awsS3Bucket: ""
+  awsCdnUrl: ""
+
+ingress:
+  enabled: true
+  host: streamingapp.local
+  ingressClassName: alb
