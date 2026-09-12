@@ -1,4 +1,4 @@
-# StreamingApp
+# StreamingApp from akshai
 
 Stream premium video content, host live watch parties, and manage your catalogue with a modern microservice architecture. The platform now ships with a production-ready admin portal, real-time chat, S3-backed adaptive streaming, and a redesigned cinematic frontend experience.
 
