@@ -41,7 +41,7 @@ mongo:
 config:
   mongoDatabase: streamingapp
   awsRegion: ap-south-1
-  clientUrls: "http://streamingapp.local"
+  clientUrls: "http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com"
 
 secrets:
   jwtSecret: changeme
