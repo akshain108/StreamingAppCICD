@@ -28,6 +28,7 @@ pipeline {
                 sh 'git --version'
                 sh 'docker --version'
                 sh 'aws --version'
+                sh 'kubectl version --client'
             }
         }
 
@@ -94,15 +95,27 @@ pipeline {
                 '''
             }
         }
+        stage('Deploy to EKS') {
+            steps {
+                sh '''
+                    aws eks update-kubeconfig --region $AWS_REGION --name streaming-eks
+
+                    kubectl rollout restart deployment/frontend -n streamingapp
+
+                    kubectl rollout status deployment/frontend -n streamingapp
+                '''
+            }
+        }
     }
 
-    post {
-        success {
-            echo 'All Docker images were built and pushed successfully!'
-        }
-
-        failure {
-            echo 'Jenkins pipeline failed.'
-        }
+post {
+    success {
+        echo 'All Docker images were built, pushed, and frontend deployment was updated successfully!'
     }
+
+    failure {
+        echo 'Jenkins pipeline failed.'
+    }
+}
+
 }
