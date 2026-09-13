@@ -50,6 +50,7 @@ pipeline {
         stage('Build Images') {
             steps {
         sh '''
+            echo "Building frontend with EKS API URLs"
             docker build \
               --build-arg REACT_APP_AUTH_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/auth \
               --build-arg REACT_APP_STREAMING_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/streaming \
