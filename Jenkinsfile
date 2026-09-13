@@ -97,13 +97,18 @@ pipeline {
         }
         stage('Deploy to EKS') {
             steps {
-                sh '''
-                    aws eks update-kubeconfig --region $AWS_REGION --name streaming-eks
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'aws-ecr-credentials-akshai']
+                ]) {
+                    sh '''
+                        aws eks update-kubeconfig --region $AWS_REGION --name streaming-eks
 
-                    kubectl rollout restart deployment/frontend -n streamingapp
+                        kubectl rollout restart deployment/frontend -n streamingapp
 
-                    kubectl rollout status deployment/frontend -n streamingapp
-                '''
+                        kubectl rollout status deployment/frontend -n streamingapp
+                    '''
+                }
             }
         }
     }
