@@ -47,7 +47,7 @@ secrets:
   jwtSecret: changeme
   awsAccessKeyId: ""
   awsSecretAccessKey: ""
-  awsS3Bucket: ""
+  awsS3Bucket: streamingapp-038501649978
   awsCdnUrl: ""
 
 ingress:
