@@ -49,30 +49,36 @@ pipeline {
 
         stage('Build Images') {
             steps {
-                sh '''
-                    docker build \
-                      -t $FRONTEND_IMAGE:latest \
-                      ./frontend
+        sh '''
+            docker build \
+              --build-arg REACT_APP_AUTH_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/auth \
+              --build-arg REACT_APP_STREAMING_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/streaming \
+              --build-arg REACT_APP_STREAMING_PUBLIC_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com \
+              --build-arg REACT_APP_ADMIN_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/admin \
+              --build-arg REACT_APP_CHAT_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/chat \
+              --build-arg REACT_APP_CHAT_SOCKET_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com \
+              -t $FRONTEND_IMAGE:latest \
+              ./frontend
 
-                    docker build \
-                      -t $AUTH_IMAGE:latest \
-                      ./backend/authService
+            docker build \
+              -t $AUTH_IMAGE:latest \
+              ./backend/authService
 
-                    docker build \
-                      -t $STREAMING_IMAGE:latest \
-                      -f ./backend/streamingService/Dockerfile \
-                      ./backend
+            docker build \
+              -t $STREAMING_IMAGE:latest \
+              -f ./backend/streamingService/Dockerfile \
+              ./backend
 
-                    docker build \
-                      -t $ADMIN_IMAGE:latest \
-                      -f ./backend/adminService/Dockerfile \
-                      ./backend
+            docker build \
+              -t $ADMIN_IMAGE:latest \
+              -f ./backend/adminService/Dockerfile \
+              ./backend
 
-                    docker build \
-                      -t $CHAT_IMAGE:latest \
-                      -f ./backend/chatService/Dockerfile \
-                      ./backend
-                '''
+            docker build \
+              -t $CHAT_IMAGE:latest \
+              -f ./backend/chatService/Dockerfile \
+              ./backend
+        '''
             }
         }
 
