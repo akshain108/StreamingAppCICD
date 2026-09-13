@@ -7,6 +7,7 @@ pipeline {
         AWS_ACCOUNT_ID = '038501649978'
 
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE_TAG = '1.0.1'    
 
         FRONTEND_IMAGE  = "${ECR_REGISTRY}/streaming-frontend"
         AUTH_IMAGE      = "${ECR_REGISTRY}/streaming-auth"
@@ -59,25 +60,25 @@ pipeline {
               --build-arg REACT_APP_ADMIN_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/admin \
               --build-arg REACT_APP_CHAT_API_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com/api/chat \
               --build-arg REACT_APP_CHAT_SOCKET_URL=http://a1f0ca805fea748d0a80fd27271042a0-431233775.ap-south-1.elb.amazonaws.com \
-              -t $FRONTEND_IMAGE:latest \
+              -t $FRONTEND_IMAGE:$IMAGE_TAG \
               ./frontend
 
             docker build \
-              -t $AUTH_IMAGE:latest \
+              -t $AUTH_IMAGE:$IMAGE_TAG \
               ./backend/authService
 
             docker build \
-              -t $STREAMING_IMAGE:latest \
+              -t $STREAMING_IMAGE:$IMAGE_TAG \
               -f ./backend/streamingService/Dockerfile \
               ./backend
 
             docker build \
-              -t $ADMIN_IMAGE:latest \
+              -t $ADMIN_IMAGE:$IMAGE_TAG \
               -f ./backend/adminService/Dockerfile \
               ./backend
 
             docker build \
-              -t $CHAT_IMAGE:latest \
+              -t $CHAT_IMAGE:$IMAGE_TAG \
               -f ./backend/chatService/Dockerfile \
               ./backend
         '''
@@ -87,11 +88,11 @@ pipeline {
         stage('Push Images') {
             steps {
                 sh '''
-                    docker push $FRONTEND_IMAGE:latest
-                    docker push $AUTH_IMAGE:latest
-                    docker push $STREAMING_IMAGE:latest
-                    docker push $ADMIN_IMAGE:latest
-                    docker push $CHAT_IMAGE:latest
+                    docker push $FRONTEND_IMAGE:$IMAGE_TAG
+                    docker push $AUTH_IMAGE:$IMAGE_TAG
+                    docker push $STREAMING_IMAGE:$IMAGE_TAG
+                    docker push $ADMIN_IMAGE:$IMAGE_TAG
+                    docker push $CHAT_IMAGE:$IMAGE_TAG  
                 '''
             }
         }

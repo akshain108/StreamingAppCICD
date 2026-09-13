@@ -1,138 +1,679 @@
-# StreamingApp from akshai
+# StreamingApp
 
-Stream premium video content, host live watch parties, and manage your catalogue with a modern microservice architecture. The platform now ships with a production-ready admin portal, real-time chat, S3-backed adaptive streaming, and a redesigned cinematic frontend experience.
+A MERN-based video streaming platform built using a microservice architecture and deployed on AWS EKS using Docker, Amazon ECR, Kubernetes, Helm, Jenkins, MongoDB, and NGINX Ingress.
+
+The application provides user authentication, video catalogue and playback, administrator video management, and real-time chat for watch parties.
+
+---
 
 ## Architecture
 
 | Service | Port | Description |
-| --- | --- | --- |
-| `authService` | 3001 | User authentication, registration, JWT issuance |
-| `streamingService` | 3002 | Video catalogue, S3 playback endpoints, public APIs |
-| `adminService` | 3003 | Dedicated admin microservice for asset management and uploads |
-| `chatService` | 3004 | Websocket + REST chat for live watch parties |
-| `frontend` | 3000 | React SPA with revamped UI and integrated chat |
-| `mongo` | 27017 | Shared MongoDB instance |
+|---|---:|---|
+| authService | 3001 | User registration, login and JWT authentication |
+| streamingService | 3002 | Video catalogue and S3-backed video streaming |
+| adminService | 3003 | Administrator authentication and video management/upload |
+| chatService | 3004 | REST and Socket.IO real-time chat |
+| frontend | 80 | React SPA served through NGINX |
+| mongo | 27017 | Persistent MongoDB database |
 
-All backend services share common database models and utilities through `backend/common`.
+### AWS / Kubernetes Architecture
 
-## Environment Configuration
-
-Create an `.env` for each service (or export variables before running). All services accept the standard AWS credentials for S3 access.
-
-### Auth Service (`backend/authService/.env`)
-```ini
-PORT=3001
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=ap-south-1
-AWS_S3_BUCKET=
+```text
+Internet
+   |
+   v
+AWS Load Balancer
+   |
+   v
+NGINX Ingress
+   |
+   +--> frontend-svc --> Frontend
+   +--> auth-svc --> authService
+   +--> streaming-svc --> streamingService
+   +--> admin-svc --> adminService
+   +--> chat-svc --> chatService
+                         |
+                         v
+                      MongoDB
+                         |
+                         v
+                    AWS EBS / PVC
 ```
 
-### Streaming Service (`backend/streamingService/.env`)
-```ini
-PORT=3002
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=ap-south-1
-AWS_S3_BUCKET=
-AWS_CDN_URL=
-STREAMING_PUBLIC_URL=http://localhost:3002
+---
+
+## Technology Stack
+
+- React
+- Node.js
+- Express
+- MongoDB
+- Socket.IO
+- Docker
+- Kubernetes
+- Helm
+- Jenkins
+- AWS ECR
+- AWS EKS
+- AWS EBS
+- AWS S3
+- NGINX Ingress
+
+---
+
+## Project Structure
+
+```text
+StreamingAppCICD/
+├── backend/
+│   ├── authService/
+│   ├── streamingService/
+│   ├── adminService/
+│   ├── chatService/
+│   └── common/
+├── frontend/
+├── streamingapp/
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/
+├── Jenkinsfile
+└── README.md
 ```
 
-### Admin Service (`backend/adminService/.env`)
-```ini
-PORT=3003
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=ap-south-1
-AWS_S3_BUCKET=
+---
+
+# AWS Environment
+
+## EKS
+
+Cluster:
+
+```text
+streaming-eks
 ```
 
-### Chat Service (`backend/chatService/.env`)
-```ini
-PORT=3004
-MONGO_URI=mongodb://localhost:27017/streamingapp
-JWT_SECRET=changeme
-CLIENT_URLS=http://localhost:3000
+Region:
+
+```text
+ap-south-1
 ```
 
-### Frontend build variables (`frontend/.env` or Docker build args)
-```ini
-REACT_APP_AUTH_API_URL=http://localhost:3001/api
-REACT_APP_STREAMING_API_URL=http://localhost:3002/api
-REACT_APP_STREAMING_PUBLIC_URL=http://localhost:3002
-REACT_APP_ADMIN_API_URL=http://localhost:3003/api/admin
-REACT_APP_CHAT_API_URL=http://localhost:3004/api/chat
-REACT_APP_CHAT_SOCKET_URL=http://localhost:3004
+Namespace:
+
+```text
+streamingapp
 ```
 
-## Running with Docker Compose
+## ECR
 
-1. Populate the environment variables above (or rely on the defaults baked into `docker-compose.yml`).
-2. Build and start the stack:
-   ```bash
-   docker-compose up --build
-   ```
-3. Navigate to `http://localhost:3000` for the web app.
+Registry:
 
-The compose file provisions MongoDB plus all four Node.js microservices. S3 credentials are optional for local testing—you can still browse seeded metadata, but streaming requires valid S3 objects.
+```text
+038501649978.dkr.ecr.ap-south-1.amazonaws.com
+```
 
-## Local Development
+Images:
 
-Install dependencies for each service:
+```text
+streaming-frontend
+streaming-auth
+streaming-service
+streaming-admin
+streaming-chat
+```
+
+## S3
+
+Video assets are stored using an AWS S3 bucket configured through Kubernetes configuration and secrets.
+
+## EBS
+
+MongoDB uses persistent Kubernetes storage backed by AWS EBS.
+
+> Do not delete the MongoDB PVC during normal troubleshooting because it contains persistent application data.
+
+---
+
+# Prerequisites
+
+Install:
+
+- Git
+- Docker
+- AWS CLI
+- kubectl
+- Helm
+
+AWS access is required for ECR, EKS, S3, and EBS-backed Kubernetes storage.
+
+The Jenkins agent must also have Git, Docker, AWS CLI, and kubectl.
+
+---
+
+# Kubernetes Deployment
+
+Create the namespace if required:
 
 ```bash
-# auth service
-cd backend/authService && npm install
-
-# streaming service
-cd ../streamingService && npm install
-
-# admin service
-cd ../adminService && npm install
-
-# chat service
-cd ../chatService && npm install
-
-# frontend
-cd ../../frontend && npm install
+kubectl create namespace streamingapp
 ```
 
-Run the services (in separate terminals) after starting MongoDB:
+Validate the Helm chart:
 
 ```bash
-cd backend/authService && npm run dev
-cd backend/streamingService && npm run dev
-cd backend/adminService && npm run dev
-cd backend/chatService && npm run dev
-cd frontend && npm start
+helm lint ./streamingapp
 ```
 
-## Feature Highlights
+Install:
 
-- **S3-backed adaptive streaming** with secure signed uploads for admins.
-- **Dedicated admin microservice** for video ingestion, metadata management, and featured curation.
-- **Real-time chat** overlay in the player (Socket.IO + persistent message history).
-- **Modern React experience** featuring cinematic hero sections, dynamic carousels, and responsive design.
-- **Role-aware access control** across frontend routes and backend microservices.
+```bash
+helm install streamingapp ./streamingapp -n streamingapp
+```
 
-## Testing
+Upgrade an existing release:
 
-Automated tests are not yet included. Recommended smoke checks:
+```bash
+helm upgrade streamingapp ./streamingapp -n streamingapp
+```
 
-1. Register and log in through the web UI.
-2. Upload a small video + thumbnail via the admin dashboard (requires valid S3 credentials).
-3. Confirm playback from the browse page and verify that chat messages broadcast between multiple browser tabs.
+Check Helm:
 
-## License
+```bash
+helm status streamingapp -n streamingapp
+```
+
+---
+
+# Verify Kubernetes Resources
+
+```bash
+kubectl get pods -n streamingapp
+kubectl get deployments -n streamingapp
+kubectl get svc -n streamingapp
+kubectl get ingress -n streamingapp
+```
+
+---
+
+# MongoDB Persistence
+
+MongoDB is deployed as a StatefulSet with a PersistentVolumeClaim.
+
+```bash
+kubectl get statefulset -n streamingapp
+kubectl get pod mongo-0 -n streamingapp
+kubectl get pvc -n streamingapp
+```
+
+MongoDB data is stored on an AWS EBS-backed persistent volume.
+
+---
+
+# Ingress
+
+NGINX Ingress provides a single external entry point.
+
+Routes:
+
+```text
+/                  -> frontend-svc
+/api/auth          -> auth-svc
+/api/streaming     -> streaming-svc
+/api/admin         -> admin-svc
+/api/chat          -> chat-svc
+/socket.io         -> chat-svc
+```
+
+Check:
+
+```bash
+kubectl get ingress -n streamingapp
+```
+
+---
+
+# Jenkins CI/CD
+
+The Jenkins pipeline automates image creation, publishing, and EKS rollout.
+
+Pipeline:
+
+```text
+Checkout
+   |
+Check Tools
+   |
+AWS Login
+   |
+Build Images
+   |
+Push Images
+   |
+Deploy to EKS
+```
+
+The pipeline:
+
+1. Checks out the repository.
+2. Verifies Git, Docker, AWS CLI and kubectl.
+3. Authenticates to Amazon ECR.
+4. Builds five Docker images.
+5. Pushes the images to ECR.
+6. Updates kubeconfig for the EKS cluster.
+7. Restarts the frontend Deployment.
+8. Waits for the frontend rollout to complete.
+
+AWS credentials are configured in Jenkins and are not stored in source control.
+
+---
+
+# Frontend Configuration
+
+The React frontend receives API endpoints during the Docker build using build arguments:
+
+```text
+REACT_APP_AUTH_API_URL
+REACT_APP_STREAMING_API_URL
+REACT_APP_STREAMING_PUBLIC_URL
+REACT_APP_ADMIN_API_URL
+REACT_APP_CHAT_API_URL
+REACT_APP_CHAT_SOCKET_URL
+```
+
+The deployed frontend uses the NGINX Ingress Load Balancer as the common external API entry point.
+
+---
+
+# Kubernetes Scaling
+
+The Streaming Deployment can be scaled horizontally.
+
+Scale to four replicas:
+
+```bash
+kubectl scale deployment streaming --replicas=4 -n streamingapp
+```
+
+Verify:
+
+```bash
+kubectl get deployment streaming -n streamingapp
+```
+
+Expected:
+
+```text
+READY   UP-TO-DATE   AVAILABLE
+4/4     4            4
+```
+
+Verify pods:
+
+```bash
+kubectl get pods -n streamingapp -l app=streaming
+```
+
+---
+
+# Rolling Updates
+
+Deployments use:
+
+```yaml
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+```
+
+Verify the live configuration:
+
+```bash
+kubectl get deployment streaming -n streamingapp -o jsonpath="{.spec.strategy.type}{'\n'}{.spec.strategy.rollingUpdate.maxUnavailable}{'\n'}{.spec.strategy.rollingUpdate.maxSurge}{'\n'}"
+```
+
+Expected:
+
+```text
+RollingUpdate
+0
+1
+```
+
+Perform a rollout:
+
+```bash
+kubectl rollout restart deployment/streaming -n streamingapp
+```
+
+Monitor:
+
+```bash
+kubectl rollout status deployment/streaming -n streamingapp
+```
+
+Expected:
+
+```text
+deployment "streaming" successfully rolled out
+```
+
+---
+
+# Kubernetes Self-Healing
+
+Kubernetes automatically recreates pods managed by a Deployment.
+
+Check:
+
+```bash
+kubectl get pods -n streamingapp -l app=chat
+```
+
+Delete one pod:
+
+```bash
+kubectl delete pod <chat-pod-name> -n streamingapp
+```
+
+Verify:
+
+```bash
+kubectl get pods -n streamingapp -l app=chat
+```
+
+A replacement pod should reach:
+
+```text
+1/1 Running
+```
+
+---
+
+# Application Smoke Tests
+
+The deployed application has been verified for:
+
+## Authentication
+
+- User registration
+- User login
+- JWT authentication
+- Authenticated API access
+
+## Admin Upload
+
+The admin dashboard supports video and thumbnail upload through the admin microservice.
+
+API base path:
+
+```text
+/api/admin
+```
+
+## Video Catalogue and Playback
+
+The Streaming service provides catalogue and playback APIs.
+
+Example:
+
+```text
+/api/streaming/videos
+```
+
+Video playback uses S3-backed content and supports range requests.
+
+## Chat REST API
+
+Chat history:
+
+```text
+/api/chat/history/<videoId>
+```
+
+Unauthenticated requests return:
+
+```text
+401 Unauthorized
+```
+
+Authenticated requests return:
+
+```text
+200 OK
+```
+
+## Live Chat
+
+Live chat uses Socket.IO.
+
+Live messaging was verified using two browser tabs connected to the same video. Messages sent from one tab were received by the other without refreshing the page.
+
+---
+
+# Health Checks
+
+Check all pods:
+
+```bash
+kubectl get pods -n streamingapp
+```
+
+Healthy pods should show:
+
+```text
+READY   STATUS
+1/1     Running
+```
+
+The Chat service exposes:
+
+```text
+/api/health
+```
+
+Kubernetes liveness and readiness probes are configured for the application deployments.
+
+---
+
+# Environment Variables and Secrets
+
+Sensitive configuration must not be committed to Git.
+
+Runtime configuration is provided through Kubernetes ConfigMaps and Secrets.
+
+Typical configuration includes:
+
+```text
+MONGO_DB
+AWS_REGION
+CLIENT_URLS
+JWT_SECRET
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_S3_BUCKET
+AWS_CDN_URL
+STREAMING_PUBLIC_URL
+```
+
+For production, AWS IAM-based authentication should be preferred over static AWS credentials.
+
+---
+
+# Local Development
+
+Install dependencies:
+
+```bash
+cd backend/authService
+npm install
+
+cd ../streamingService
+npm install
+
+cd ../adminService
+npm install
+
+cd ../chatService
+npm install
+
+cd ../../frontend
+npm install
+```
+
+Run backend services in separate terminals after MongoDB is available:
+
+```bash
+cd backend/authService
+npm run dev
+```
+
+```bash
+cd backend/streamingService
+npm run dev
+```
+
+```bash
+cd backend/adminService
+npm run dev
+```
+
+```bash
+cd backend/chatService
+npm run dev
+```
+
+Run the frontend:
+
+```bash
+cd frontend
+npm start
+```
+
+---
+
+# Docker Compose
+
+For local containerized development:
+
+```bash
+docker-compose up --build
+```
+
+The local frontend is normally available at:
+
+```text
+http://localhost:3000
+```
+
+S3 credentials are required for S3-backed video upload and playback.
+
+---
+
+# Troubleshooting
+
+Check pod logs:
+
+```bash
+kubectl logs <pod-name> -n streamingapp
+```
+
+Describe a pod:
+
+```bash
+kubectl describe pod <pod-name> -n streamingapp
+```
+
+Describe a deployment:
+
+```bash
+kubectl describe deployment <deployment-name> -n streamingapp
+```
+
+Describe a service:
+
+```bash
+kubectl describe svc <service-name> -n streamingapp
+```
+
+Describe ingress:
+
+```bash
+kubectl describe ingress -n streamingapp
+```
+
+Check recent events:
+
+```bash
+kubectl get events -n streamingapp --sort-by=.lastTimestamp
+```
+
+---
+
+# Security Notes
+
+For production:
+
+- Do not commit AWS credentials to Git.
+- Use Kubernetes Secrets or AWS IAM-based authentication.
+- Use HTTPS/TLS for public traffic.
+- Use a proper domain name.
+- Rotate JWT secrets.
+- Follow least-privilege IAM permissions.
+- Consider Kubernetes NetworkPolicies.
+- Store production secrets in AWS Secrets Manager or another dedicated secret-management solution.
+
+---
+
+# Production Improvements
+
+Recommended improvements:
+
+- HTTPS/TLS with a proper domain
+- Horizontal Pod Autoscaler (HPA)
+- Centralized logging
+- Prometheus/Grafana monitoring
+- MongoDB backup and disaster recovery
+- Network policies
+- Separate staging and production namespaces
+- Versioned Docker image tags instead of relying only on `latest`
+- Container image vulnerability scanning
+- AWS IAM roles / EKS Pod Identity instead of static AWS credentials
+
+---
+
+# Assignment Verification Summary
+
+| Requirement | Status |
+|---|---|
+| Five Dockerized application services | Completed |
+| Amazon ECR image push | Completed |
+| Kubernetes Deployments | Completed |
+| Kubernetes Services | Completed |
+| ConfigMap | Completed |
+| Kubernetes Secrets | Completed |
+| MongoDB StatefulSet | Completed |
+| MongoDB persistent storage | Completed |
+| Health probes | Completed |
+| Helm chart | Completed |
+| NGINX Ingress | Completed |
+| Streaming scaled to 4 replicas | Verified |
+| `maxUnavailable: 0` | Verified |
+| `maxSurge: 1` | Verified |
+| Rolling deployment | Verified |
+| Kubernetes self-healing | Verified |
+| User login/JWT | Verified |
+| Admin upload | Verified |
+| Video playback | Verified |
+| Chat REST API | Verified |
+| Live Socket.IO chat | Verified |
+| Jenkins CI/CD | Verified |
+| Automatic EKS frontend rollout | Verified |
+
+---
+
+# License
 
 MIT © StreamFlix Team
