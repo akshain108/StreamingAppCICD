@@ -87,7 +87,7 @@ spec:
                   key: AWS_CDN_URL
 
             - name: STREAMING_PUBLIC_URL
-              value: "http://streaming-svc:3002"
+              value:  "{{ .Values.config.streamingPublicUrl }}"
 
           readinessProbe:
             httpGet:
