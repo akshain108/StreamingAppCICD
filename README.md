@@ -629,6 +629,9 @@ For production:
 
 # Production Improvements
 
+For a production Kubernetes cluster, I would make several improvements to the current StreamingApp setup. I would use **separate namespaces** to isolate environments and application components, apply **TLS/HTTPS** on the Ingress to secure communication, and configure **Horizontal Pod Autoscaling (HPA)** so services can automatically scale based on CPU and memory utilization. I would also use a **proper secrets-management solution** instead of storing sensitive values directly in Kubernetes Secrets, apply **resource requests and limits** to each container, and configure **PodDisruptionBudgets** to maintain availability during node maintenance. For reliability, I would use multiple worker nodes across availability zones, enable **automated backups and disaster recovery** for MongoDB, and use persistent storage with appropriate backup policies. I would strengthen **RBAC and IAM permissions** using least privilege, enable network policies to restrict unnecessary service-to-service communication, and use **HTTPS and secure headers** for the application. Finally, I would improve observability with **CloudWatch monitoring, centralized logging, alerts, dashboards, and health checks**, and use CI/CD with automated testing, image scanning, versioned deployments, and rollback capabilities to ensure safe production releases.
+
+
 Recommended improvements:
 
 - HTTPS/TLS with a proper domain
@@ -671,6 +674,11 @@ Recommended improvements:
 | Live Socket.IO chat | Verified |
 | Jenkins CI/CD | Verified |
 | Automatic EKS frontend rollout | Verified |
+
+
+Required ScreenShots have been uploaded **Assignment_Snapshots**
+
+
 
 ---
 
